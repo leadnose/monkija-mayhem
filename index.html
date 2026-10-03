@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Mönkijä Mayhem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a120b;
+    --panel: #2a1d12;
+    --panel-2: #3a2918;
+    --ink: #f5e6cf;
+    --ink-dim: #c9b393;
+    --accent: #f0a04b;
+    --red: #e63946;
+    --red-dark: #9e1f2a;
+    --green: #2bb673;
+    --line: #5a4128;
+    color-scheme: dark;
+  }
+  /* Single dark look on purpose: a dusty dirt-track night race, same in both themes. */
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink);
+    font-family: Barlow, system-ui, sans-serif; -webkit-user-select: none; user-select: none; touch-action: none; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; image-rendering: auto; }
+
+  .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(10, 6, 3, 0.45); padding: 16px; z-index: 10; }
+  .overlay.show { display: flex; }
+  .overlay.clear { background: rgba(10, 6, 3, 0.15); }
+  .panel { background: var(--panel); border: 3px solid var(--accent); border-radius: 14px;
+    padding: 22px 26px; max-width: min(760px, 100%); max-height: 100%; overflow: auto;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6); text-align: center; }
+  h1, h2, h3, .bungee { font-family: Bungee, Impact, sans-serif; font-weight: 400; margin: 0; letter-spacing: 0.02em; }
+  h2 { font-size: 30px; color: var(--accent); margin-bottom: 4px; }
+  .sub { color: var(--ink-dim); margin: 0 0 16px; }
+  .logo { font-family: Bungee, Impact, sans-serif; font-size: clamp(38px, 8vw, 74px); line-height: 0.95;
+    color: var(--accent); text-shadow: 4px 4px 0 var(--red-dark), 8px 8px 0 rgba(0,0,0,0.4); }
+  .logo span { color: var(--ink); }
+  .tag { color: var(--ink-dim); font-size: 16px; margin: 14px 0 20px; }
+  .btn { font-family: Bungee, Impact, sans-serif; font-size: 18px; color: #fff; background: var(--red);
+    border: 0; border-bottom: 5px solid var(--red-dark); border-radius: 10px; padding: 12px 22px;
+    cursor: pointer; margin: 6px; touch-action: manipulation; }
+  .btn:hover { filter: brightness(1.1); }
+  .btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+  .btn.secondary { background: var(--panel-2); border-bottom-color: #1b120a; color: var(--ink); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .keys { display: grid; grid-template-columns: auto auto; gap: 6px 18px; margin: 20px auto 0;
+    width: max-content; max-width: 100%; text-align: left; font-size: 14px; color: var(--ink-dim); }
+  kbd { font-family: Barlow, sans-serif; font-weight: 800; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 5px; padding: 1px 7px; font-size: 12px; }
+
+  table { border-collapse: collapse; margin: 8px auto 16px; min-width: min(460px, 100%); }
+  td, th { padding: 7px 12px; text-align: left; }
+  th { color: var(--ink-dim); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+  tr.me td { background: rgba(240, 160, 75, 0.15); }
+  td.pos { font-family: Bungee, Impact, sans-serif; font-size: 20px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+
+  .money { font-family: Bungee, Impact, sans-serif; font-size: 26px; color: #8ee07a; }
+  .shop { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; text-align: left; }
+  .item { background: var(--panel-2); border: 2px solid var(--line); border-radius: 10px; padding: 12px;
+    display: flex; flex-direction: column; gap: 6px; }
+  .item h3 { font-size: 16px; color: var(--ink); }
+  .item p { margin: 0; color: var(--ink-dim); font-size: 13px; flex: 1; }
+  .pips { display: flex; gap: 4px; }
+  .pip { width: 18px; height: 8px; border-radius: 2px; background: #1b120a; border: 1px solid var(--line); }
+  .pip.on { background: var(--accent); border-color: var(--accent); }
+  .item .btn { font-size: 14px; padding: 8px 10px; margin: 4px 0 0; }
+  .hotkey { color: var(--ink-dim); font-size: 11px; }
+
+  #touch { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 5; }
+  #touch.show { display: block; }
+  .tb { position: absolute; pointer-events: auto; width: 76px; height: 76px; border-radius: 50%;
+    background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.35); color: #fff;
+    font-family: Bungee, Impact, sans-serif; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .tb.on { background: rgba(240,160,75,0.45); }
+  #t-left { left: 16px; bottom: 20px; } #t-right { left: 104px; bottom: 20px; }
+  #t-gas { right: 16px; bottom: 20px; width: 92px; height: 92px; }
+  #t-brake { right: 120px; bottom: 16px; }
+  #t-nitro { right: 30px; bottom: 124px; width: 64px; height: 64px; font-size: 11px; }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Mönkijä Mayhem race track"></canvas>
+<div id="overlay" class="overlay"></div>
+<div id="touch">
+  <div class="tb" id="t-left" data-k="left">◀</div>
+  <div class="tb" id="t-right" data-k="right">▶</div>
+  <div class="tb" id="t-brake" data-k="brake">BRAKE</div>
+  <div class="tb" id="t-gas" data-k="gas">GAS</div>
+  <div class="tb" id="t-nitro" data-k="nitro">NITRO</div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
